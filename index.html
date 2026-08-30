@@ -17,8 +17,8 @@ body{font-family:Cairo,system-ui,sans-serif;background:#07090d;color:var(--text)
 button,input,select,textarea{font-family:inherit;font-size:16px}
 input,select,textarea{width:100%;background:var(--elev);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px}
 .btn{border:0;background:linear-gradient(180deg,#9edcf6,#6bb8e0);color:#061018;font-weight:800;padding:12px;border-radius:12px;width:100%}
-#auth{position:fixed;inset:0;display:grid;place-items:center;background:#07090d;z-index:40;padding:16px}
-.box{width:min(420px,100%);background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;text-align:center}
+#auth{position:fixed;inset:0;display:block;background:#07090d;z-index:40;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.box{width:min(420px,100%);margin:18px auto 40px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px 16px 28px;text-align:center}
 .err{display:none;color:#f0a3a3;margin-top:8px}
 .pills{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .pill,.chip{background:var(--elev);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:8px 12px}
