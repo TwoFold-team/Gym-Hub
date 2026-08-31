@@ -111,8 +111,8 @@ input,select,textarea{width:100%;background:var(--card);border:1px solid var(--l
   <section id="pg-welcome"><div style="display:flex;justify-content:flex-end;padding:8px 0"><button class="theme" onclick="toggleTheme()"><span>🌙</span></button></div>
     <div class="hero-welcome">
       <div class="hero-card">
-        <div class="h1">أهلًا بيكم منورين المنصة!</div>
-        <p class="muted">GymHub منصة تدريب أونلاين من TwoFold-Team. جداول تمرين للولاد والبنات، نظام غذائي حسب وزنك وطولك وسنك، متابعة نقاط وإنجاز، واشتراك شهري أو ربع سنوي. تدخل بخطة واضحة وتتبع تقدمك من غير لف.</p>
+        <div class="h1" id="welcomeH">أهلًا بيكم منورين المنصة!</div>
+        <p class="muted" id="welcomeP">GymHub منصة تدريب أونلاين من TwoFold-Team. جداول تمرين للولاد والبنات، نظام غذائي حسب وزنك وطولك وسنك، متابعة نقاط وإنجاز، واشتراك شهري أو ربع سنوي. تدخل بخطة واضحة وتتبع تقدمك من غير لف.</p>
         <div class="actions">
           <button class="btn" onclick="openAuth('reg')">إنشاء حساب</button>
           <button class="btn ghost" onclick="openAuth('login')">تسجيل الدخول</button>
@@ -193,7 +193,7 @@ input,select,textarea{width:100%;background:var(--card);border:1px solid var(--l
 
   <section id="pg-chat" class="hidden">
     <div class="wa-wrap">
-      <div class="wa-head">الدردشة مع الكابتن</div>
+      <div class="wa-head" id="chatHead">الدردشة مع الكابتن</div>
       <div id="chatBox" class="wa-thread"></div>
       <div class="wa-bar">
         <input id="chatMsg" placeholder="رسالة">
@@ -204,8 +204,8 @@ input,select,textarea{width:100%;background:var(--card);border:1px solid var(--l
 </main>
 
 <footer class="foot">
-  <div>بنود الخدمة</div>
-  <div>تم التصميم بواسطة TwoFold-Team @2026</div>
+  <div id="footerNote">بنود الخدمة</div>
+  <div id="credit">تم التصميم بواسطة TwoFold-Team @2026</div>
   <div style="font-size:.72rem;margin:4px 0 10px">أحمد العربي - ياسين خالد</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:right;max-width:520px;margin:0 auto">
     <div class="card" style="padding:10px"><b>أحمد العربي</b><div style="display:flex;gap:6px;margin-top:8px">
@@ -272,7 +272,23 @@ function showPage(id,btn){
   if(id==="packs"||id==="pay") renderPacks();
   if(id==="chat") listenChat();
 }
-function goHomeNav(btn){if(sessionStorage.getItem("ykAuth")==="1") showPage("home",btn); else showPage("welcome",btn);}
+function goHomeNav(btn){firebase.database().ref("platform").on("value", function(snap){ applySite(snap.val()||{}); });
+
+function applySite(d){
+  if(!d) return;
+  const set=(id,v)=>{const el=document.getElementById(id); if(el&&v) el.textContent=v;};
+  set("welcomeH", d.welcomeH);
+  set("welcomeP", d.welcomeP);
+  set("homeHint", d.homeHintTxt);
+  set("footerNote", d.footerNote);
+  set("credit", d.credit);
+  set("chatHead", d.chatTitle);
+  document.querySelectorAll(".brand").forEach(el=>{ if(d.brandName) el.textContent=d.brandName; });
+  if(d.imgGym){ const img=document.querySelector("#boyPick img"); if(img) img.src=d.imgGym; }
+  if(d.imgHome){ const img=document.querySelector("#girlPick img"); if(img) img.src=d.imgHome; }
+}
+
+if(sessionStorage.getItem("ykAuth")==="1") showPage("home",btn); else showPage("welcome",btn);}
 function needAuth(){if(sessionStorage.getItem("ykAuth")!=="1"){openAuth("login"); return false;} return true;}
 function openAuth(tab){document.getElementById("auth").classList.remove("hidden");authTab(tab);}
 function closeAuth(){document.getElementById("auth").classList.add("hidden");}
@@ -397,6 +413,22 @@ function sendChat(){
   firebase.database().ref("platform/chats/"+sid()+"/messages").push({from:"user",text:t,at:Date.now()});
   document.getElementById("chatMsg").value="";
 }
+firebase.database().ref("platform").on("value", function(snap){ applySite(snap.val()||{}); });
+
+function applySite(d){
+  if(!d) return;
+  const set=(id,v)=>{const el=document.getElementById(id); if(el&&v) el.textContent=v;};
+  set("welcomeH", d.welcomeH);
+  set("welcomeP", d.welcomeP);
+  set("homeHint", d.homeHintTxt);
+  set("footerNote", d.footerNote);
+  set("credit", d.credit);
+  set("chatHead", d.chatTitle);
+  document.querySelectorAll(".brand").forEach(el=>{ if(d.brandName) el.textContent=d.brandName; });
+  if(d.imgGym){ const img=document.querySelector("#boyPick img"); if(img) img.src=d.imgGym; }
+  if(d.imgHome){ const img=document.querySelector("#girlPick img"); if(img) img.src=d.imgHome; }
+}
+
 if(sessionStorage.getItem("ykAuth")==="1"){const sub=JSON.parse(sessionStorage.getItem("ykSub")||"{}");if(sub&&sub.code) unlock();}
 
 </script>
