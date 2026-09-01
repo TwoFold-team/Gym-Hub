@@ -145,7 +145,7 @@ function weekPlan(){
   if(el) el.innerHTML="<b>خطة الأسبوع</b><div class='muted'>النهارده: "+today+" — كمّل اللي ظاهر في جدولك.</div><div style='margin-top:8px'>خلصت <b>"+Math.min(done,goal)+"</b> من "+goal+" تمارين هذا الأسبوع</div>";
   const b=document.getElementById("badgeCard");
   const days=Object.keys(s.days||{}).length;
-  if(b) b.innerHTML="<b>شارتك</b><div>"+badgeName(days)+" · "+days+" يوم التزام</div>";
+  if(b){const sub=JSON.parse(sessionStorage.getItem("ykSub")||"{}"); const st=store(); const bd=sub.badge||st.badge||badgeName(days,st.pts); b.innerHTML="<b>شارتك</b><div>"+bd+" · "+days+" يوم التزام</div>";}
   const sub=JSON.parse(sessionStorage.getItem("ykSub")||"{}");
   const pk=matchPack(sub);
   const perk=document.getElementById("perkCard");
@@ -224,7 +224,7 @@ function saveProfile(){
   sub.displayName=(document.getElementById("displayName").value||"").trim()||sub.name; sub.username=((document.getElementById("userName")||{}).value||"").trim();
   const f=document.getElementById("avFile").files[0];
   const finish=function(){sessionStorage.setItem("ykSub",JSON.stringify(sub));
-    firebase.database().ref("platform").once("value").then(function(snap){const d=snap.val()||{}; let subs=d.subs||[]; if(!Array.isArray(subs)) subs=Object.values(subs); subs=subs.map(x=>x&&x.id===sub.id?Object.assign({},x,{displayName:sub.displayName,username:sub.username,avatar:sub.avatar||x.avatar}):x); firebase.database().ref("platform/subs").set(subs);});
+    if(sub.id) firebase.database().ref("platform/subs/"+sub.id).update({displayName:sub.displayName||null,username:sub.username||null,avatar:sub.avatar||null});
     const ed=document.getElementById("editProf"); if(ed) ed.classList.add("hidden"); renderProfile(); greet(); alert("تم حفظ التعديل");};
   if(f){const r=new FileReader(); r.onload=function(){sub.avatar=r.result; finish();}; r.readAsDataURL(f);} else finish();
 }
@@ -368,7 +368,7 @@ function renewNow(){
 
 function packMonths(sub){if(sub.days && +sub.days) return 0; if(sub.months) return +sub.months; const p=String(sub.package||""); if(p.includes("تجربة")||p.includes("أيام")) return 0; if(p.includes("سنو")||p.includes("12")) return 12; if(p.includes("6")) return 6; if(p.includes("3 شهور")||p.includes("3 شهر")) return 3; if(p.includes("3")) return 3; return 1;}
 function expired(sub){if(!sub) return true; if(sub.expiresAt) return Date.now()> +sub.expiresAt; const start=sub.created||0; const p=String(sub.package||""); if(p.includes("تجربة")||+sub.days===3) return start && (Date.now()-start)>3*24*60*60*1000; return start && (Date.now()-start)>Math.max(packMonths(sub),1)*30*24*60*60*1000;}
-function checkPassword(){const pass=passInput.value.trim();firebase.database().ref("platform").once("value").then(function(snap){var d=snap.val()||{};var subs=d.subs||[];if(subs&&!Array.isArray(subs))subs=Object.values(subs);var sub=subs.find(s=>s&&s.code===pass);if(!sub||sub.active===false||expired(sub)){errorMsg.style.display="block";return;}sessionStorage.setItem("ykAuth","1");sessionStorage.setItem("ykSub",JSON.stringify(sub));try{sub.lastSeen=Date.now();firebase.database().ref("platform/subs").set(subs.map(s=>{if(s&&s.id===sub.id)s.lastSeen=sub.lastSeen;return s;}));}catch(e){}addPoints(1,"login");markStreak();unlock();}).catch(function(){errorMsg.style.display="block";});}
+function checkPassword(){const pass=passInput.value.trim();firebase.database().ref("platform").once("value").then(function(snap){var d=snap.val()||{};var subs=d.subs||[];if(subs&&!Array.isArray(subs))subs=Object.values(subs);var sub=subs.find(s=>s&&s.code===pass);if(!sub||sub.active===false||expired(sub)){errorMsg.style.display="block";return;}sessionStorage.setItem("ykAuth","1");sessionStorage.setItem("ykSub",JSON.stringify(sub));try{sub.lastSeen=Date.now(); if(sub.id) firebase.database().ref("platform/subs/"+sub.id).update({lastSeen:sub.lastSeen});}catch(e){}addPoints(1,"login");markStreak();unlock();}).catch(function(){errorMsg.style.display="block";});}
 function logout(){sessionStorage.clear();location.reload();}
 function sid(){try{return JSON.parse(sessionStorage.getItem("ykSub")||"{}").id||"x";}catch(e){return"x";}}
 function store(){return JSON.parse(localStorage.getItem("yk_prog_"+sid())||'{"pts":0,"days":{},"done":{},"loginDays":{}}');}
@@ -388,8 +388,10 @@ function listenMe(){
   firebase.database().ref("platform/progress/"+id).on("value",function(snap){
     const p=snap.val()||{};
     const st=store();
-    if(p.pts!=null) st.pts=+p.pts;
-    if(p.badge) st.badge=p.badge;
+    const cur=JSON.parse(sessionStorage.getItem("ykSub")||"{}");
+    const remote=Math.max(+ (p.pts||0), +(cur.pts||0), +(st.pts||0));
+    st.pts=remote;
+    if(p.badge||cur.badge) st.badge=p.badge||cur.badge;
     saveStore(st);
     try{renderPts(); if(typeof renderProfile==="function") renderProfile();}catch(e){}
   });
@@ -526,7 +528,7 @@ function markDone(k){
   }catch(e){}
   saveStore(s);
   checkChalAward();
-  try{firebase.database().ref("platform/progress/"+sid()+"/pts").set(s.pts); firebase.database().ref("platform/progress/"+sid()+"/done").set(s.done); firebase.database().ref("platform/progress/"+sid()+"/lastTrain").set(Date.now());}catch(e){}
+  try{firebase.database().ref("platform/progress/"+sid()+"/pts").set(s.pts); firebase.database().ref("platform/subs/"+sid()+"/pts").set(s.pts); firebase.database().ref("platform/progress/"+sid()+"/done").set(s.done); firebase.database().ref("platform/progress/"+sid()+"/lastTrain").set(Date.now());}catch(e){}
   markStreak(); renderPts(); openSys(current,currentName);
 }
 function buyPack(name,price,months){
@@ -605,7 +607,7 @@ function weekPlan(){
   if(el) el.innerHTML="<b>خطة الأسبوع</b><div class='muted'>النهارده: "+today+" — كمّل اللي ظاهر في جدولك.</div><div style='margin-top:8px'>خلصت <b>"+Math.min(done,goal)+"</b> من "+goal+" تمارين هذا الأسبوع</div>";
   const b=document.getElementById("badgeCard");
   const days=Object.keys(s.days||{}).length;
-  if(b) b.innerHTML="<b>شارتك</b><div>"+badgeName(days)+" · "+days+" يوم التزام</div>";
+  if(b){const sub=JSON.parse(sessionStorage.getItem("ykSub")||"{}"); const st=store(); const bd=sub.badge||st.badge||badgeName(days,st.pts); b.innerHTML="<b>شارتك</b><div>"+bd+" · "+days+" يوم التزام</div>";}
   const sub=JSON.parse(sessionStorage.getItem("ykSub")||"{}");
   const pk=matchPack(sub);
   const perk=document.getElementById("perkCard");
@@ -657,7 +659,7 @@ function saveProfile(){
   sub.displayName=(document.getElementById("displayName").value||"").trim()||sub.name; sub.username=((document.getElementById("userName")||{}).value||"").trim();
   const f=document.getElementById("avFile").files[0];
   const finish=function(){sessionStorage.setItem("ykSub",JSON.stringify(sub));
-    firebase.database().ref("platform").once("value").then(function(snap){const d=snap.val()||{}; let subs=d.subs||[]; if(!Array.isArray(subs)) subs=Object.values(subs); subs=subs.map(x=>x&&x.id===sub.id?Object.assign({},x,{displayName:sub.displayName,username:sub.username,avatar:sub.avatar||x.avatar}):x); firebase.database().ref("platform/subs").set(subs);});
+    if(sub.id) firebase.database().ref("platform/subs/"+sub.id).update({displayName:sub.displayName||null,username:sub.username||null,avatar:sub.avatar||null});
     const ed=document.getElementById("editProf"); if(ed) ed.classList.add("hidden"); renderProfile(); greet(); alert("تم حفظ التعديل");};
   if(f){const r=new FileReader(); r.onload=function(){sub.avatar=r.result; finish();}; r.readAsDataURL(f);} else finish();
 }
