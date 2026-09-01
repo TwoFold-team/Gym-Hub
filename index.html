@@ -751,14 +751,11 @@ function renderShop(){
 function redeem(pts,off){
   const s=store();
   if((s.pts||0)<pts) return alert("نقاطك غير كافيه");
-  if(!confirm("تأكيد استبدال "+pts+" نقطة بخصم "+off+"٪ على اشتراكك الجديد؟ النقاط هتتخصم دلوقتي ومش هترجع.")) return;
-  s.pts-=pts; saveStore(s);
+  if(!confirm("طلب استبدال "+pts+" نقطة بخصم "+off+"٪؟ الطلب هيروح للكابتن. النقاط تتخصم بعد التأكيد.")) return;
   const sub=JSON.parse(sessionStorage.getItem("ykSub")||"{}");
-  sub.pendingDiscount=off; sessionStorage.setItem("ykSub",JSON.stringify(sub));
-  firebase.database().ref("platform/redeems").push({id:sid(),name:sub.name,phone:sub.phone,code:sub.code,pts:pts,off:off,at:Date.now()});
-  firebase.database().ref("platform/progress/"+sid()+"/pts").set(s.pts);
-  renderShop();
-  alert("تم إرسال طلب الخصم للكابتن. تابع الدردشة للرد.");
+  firebase.database().ref("platform/redeems").push({sid:sid(),id:sid(),name:sub.name,phone:sub.phone,code:sub.code,pts:pts,off:off,at:Date.now(),status:"pending"});
+  firebase.database().ref("platform/notifs/"+sid()).push({text:"طلب استبدال "+pts+" نقطة بخصم "+off+"٪ في انتظار تأكيد الكابتن",at:Date.now(),read:false});
+  alert("اتبعت طلب الاستبدال للكابتن. بعد التأكيد النقاط هتتخصم.");
 }
 function applySite(d){
   if(!d) return;
@@ -1187,14 +1184,11 @@ function renderShop(){
 function redeem(pts,off){
   const s=store();
   if((s.pts||0)<pts) return alert("نقاطك غير كافيه");
-  if(!confirm("تأكيد استبدال "+pts+" نقطة بخصم "+off+"٪ على اشتراكك الجديد؟ النقاط هتتخصم دلوقتي ومش هترجع.")) return;
-  s.pts-=pts; saveStore(s);
+  if(!confirm("طلب استبدال "+pts+" نقطة بخصم "+off+"٪؟ الطلب هيروح للكابتن. النقاط تتخصم بعد التأكيد.")) return;
   const sub=JSON.parse(sessionStorage.getItem("ykSub")||"{}");
-  sub.pendingDiscount=off; sessionStorage.setItem("ykSub",JSON.stringify(sub));
-  firebase.database().ref("platform/redeems").push({id:sid(),name:sub.name,phone:sub.phone,code:sub.code,pts:pts,off:off,at:Date.now()});
-  firebase.database().ref("platform/progress/"+sid()+"/pts").set(s.pts);
-  renderShop();
-  alert("تم إرسال طلب الخصم للكابتن. تابع الدردشة للرد.");
+  firebase.database().ref("platform/redeems").push({sid:sid(),id:sid(),name:sub.name,phone:sub.phone,code:sub.code,pts:pts,off:off,at:Date.now(),status:"pending"});
+  firebase.database().ref("platform/notifs/"+sid()).push({text:"طلب استبدال "+pts+" نقطة بخصم "+off+"٪ في انتظار تأكيد الكابتن",at:Date.now(),read:false});
+  alert("اتبعت طلب الاستبدال للكابتن. بعد التأكيد النقاط هتتخصم.");
 }
 function applySite(d){
   if(!d) return;
